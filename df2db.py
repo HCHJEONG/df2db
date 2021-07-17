@@ -26,7 +26,7 @@ class Corpus(Base):
     citedPlace = Column(TEXT(collation = 'utf8mb4_unicode_ci')) 
     decision_items = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
     decision_gists = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
-    main_decision = Column(TEXT(collation = 'utf8mb4_unicode_ci')) 
+    main_decision = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
     reasoning = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
     case_comment = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
     related_articles = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
