@@ -139,43 +139,7 @@ class Corpus(Base):
                             self.file_created_time,
                             self.folder_file_name)
 
-class Summary(Base): 
-
-    __tablename__ = 'summary' 
-    __table_args__ = {'mysql_engine':'InnoDB', 'mysql_charset':'utf8mb4','mysql_collate':'utf8mb4_unicode_ci'}
-    id = Column(Integer, primary_key=True) 
-    filename = Column(TEXT(collation = 'utf8mb4_unicode_ci')) 
-    case_full_no = Column(TEXT(collation = 'utf8mb4_unicode_ci')) 
-    number = Column(Integer) 
-    items = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
-    gists = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
-    acts = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
-    precedents = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
-
-    def __init__(self, file_name, case_full_no, number, items, gists, acts, precedents):
-
-        self.file_name = file_name
-        self.case_full_no=case_full_no
-        self.number=number
-        self.items=items
-        self.gists=gists
-        self.acts=acts
-        self.precedents=precedents
-
-    def __repr__(self): 
-        return "<Corpus('%d', \
-                        '%s', '%s', '%s', '%s',\
-                        '%s', '%s', '%s'>" \
-                            %(self.id,
-                            self.file_name,
-                            self.case_full_no,
-                            self.number,
-                            self.items,
-                            self.gists,
-                            self.acts,
-                            self.precedents)
-
-def show_tables(base): 
+def show_corpus(base): 
     queries = db_session.query(base) 
     entries = [dict(id=q.id, 
                 case_txt_in_file = q.case_txt_in_file,
@@ -203,10 +167,12 @@ def show_tables(base):
                 party_info = q.party_info,
                 file_created_time = q.file_created_time,
                 folder_file_name = q.folder_file_name) for q in queries] 
+
     print (entries)
     return entries
 
-def add_entry(base, case_txt_in_file ,
+def add_corpus_entry(base, 
+                case_txt_in_file,
                 case_full_no,     
                 case_official_name,
                 case_unofficial_name,
@@ -262,13 +228,6 @@ def add_entry(base, case_txt_in_file ,
     db_session.add(t) 
     db_session.commit() 
 
-# def delete_entry(datetime, string): 
-#     db_session.query(Corpus).filter(Corpus.datetime==datetime, Corpus.string==string).delete() 
-#     db_session.commit() 
-
-def init_db():
-    Base.metadata.create_all(engine)
-
 def main_corpus(limit):
 
     for i in range(len(df_corpus.index)):
@@ -301,7 +260,7 @@ def main_corpus(limit):
         file_created_time = str(df_corpus['file_created_time'].iloc[i])
         folder_file_name = str(df_corpus['folder_file_name'].iloc[i])
                     
-        add_entry(Corpus, 
+        add_corpus_entry(Corpus, 
                     case_txt_in_file ,
                     case_full_no,     
                     case_official_name,
@@ -328,16 +287,58 @@ def main_corpus(limit):
                     file_created_time,
                     folder_file_name) 
 
-    # show_tables(Corpus)
+    # show_corpus(Corpus)
     # delete_entry("2015-02-06 09:00:05","test1") 
     db_session.close() 
+
+# def delete_entry(datetime, string): 
+#     db_session.query(Corpus).filter(Corpus.datetime==datetime, Corpus.string==string).delete() 
+#     db_session.commit() 
+
+class Summary(Base): 
+
+    __tablename__ = 'summary' 
+    __table_args__ = {'mysql_engine':'InnoDB', 'mysql_charset':'utf8mb4','mysql_collate':'utf8mb4_unicode_ci'}
+    id = Column(Integer, primary_key=True) 
+    filename = Column(TEXT(collation = 'utf8mb4_unicode_ci')) 
+    case_full_no = Column(TEXT(collation = 'utf8mb4_unicode_ci')) 
+    number = Column(Integer) 
+    items = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
+    gists = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
+    acts = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
+    precedents = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
+
+    def __init__(self, file_name, case_full_no, number, items, gists, acts, precedents):
+
+        self.file_name = file_name
+        self.case_full_no=case_full_no
+        self.number=number
+        self.items=items
+        self.gists=gists
+        self.acts=acts
+        self.precedents=precedents
+
+    def __repr__(self): 
+        return "<Corpus('%d', \
+                        '%s', '%s', '%s', '%s',\
+                        '%s', '%s', '%s'>" \
+                            %(self.id,
+                            self.file_name,
+                            self.case_full_no,
+                            self.number,
+                            self.items,
+                            self.gists,
+                            self.acts,
+                            self.precedents)
+
+def init_db():
+    Base.metadata.create_all(engine)
     
 if __name__ == "__main__" : 
     
-    # 1
-    # db_session.close() 
     init_db()
 
+    # df_corpus
     urls = glob.glob("C:/Users/hcjeo/VSCodeProjects/web2df/saved/df_corpus.csv")
     df_corpus = pd.read_csv(urls[0])
     print(df_corpus.columns.tolist())
@@ -346,13 +347,12 @@ if __name__ == "__main__" :
     limit = 1000000000
     main_corpus(limit)
     
-    # 2
     metadata = sqlalchemy.MetaData()
     table = sqlalchemy.Table('corpus', metadata, autoload=True, autoload_with=engine)
     print(table.columns.keys())
 
-    # 3
     # with engine.connect() as con:
     #     rs = con.execute('SELECT * FROM corpus')
     # for row in rs:
     #     print (row)
+    #     break
