@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy import Column, Integer, String, DateTime
-from sqlalchemy.dialects.mysql import MEDIUMTEXT, TEXT
+from sqlalchemy.dialects.mysql import MEDIUMTEXT
 
 engine = create_engine("mariadb+pymysql://{user}:{pw}@127.0.0.1:3306/{db}?charset=utf8mb4".format(user='root', pw='3330', db='test'), 
                         encoding='utf-8', connect_args={'connect_timeout': 360}, pool_pre_ping=True)
@@ -20,10 +20,10 @@ class Corpus(Base):
     __table_args__ = {'mysql_engine':'InnoDB', 'mysql_charset':'utf8mb4','mysql_collate':'utf8mb4_unicode_ci'}
     id = Column(Integer, primary_key=True) 
     case_txt_in_file = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci'))
-    case_full_no = Column(TEXT(collation = 'utf8mb4_unicode_ci')) 
-    case_official_name = Column(TEXT(collation = 'utf8mb4_unicode_ci')) 
-    case_unofficial_name = Column(TEXT(collation = 'utf8mb4_unicode_ci')) 
-    citedPlace = Column(TEXT(collation = 'utf8mb4_unicode_ci')) 
+    case_full_no = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
+    case_official_name = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
+    case_unofficial_name = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
+    citedPlace = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
     decision_items = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
     decision_gists = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
     main_decision = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
@@ -36,15 +36,15 @@ class Corpus(Base):
     applicable_cases_in_body = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
     following_cases = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
     previous_case = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
-    site = Column(TEXT(collation = 'utf8mb4_unicode_ci')) 
-    hangul_keyword = Column(TEXT(collation = 'utf8mb4_unicode_ci')) 
+    site = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
+    hangul_keyword = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
     important = Column(Integer) 
     supreme = Column(Integer) 
     jeonhap = Column(Integer) 
     party_info = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
-    file_created_time = Column(TEXT(collation = 'utf8mb4_unicode_ci')) 
-    folder_file_name  = Column(TEXT(collation = 'utf8mb4_unicode_ci')) 
-
+    file_created_time = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
+    folder_file_name  = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
+    
     def __init__(self, case_txt_in_file,
                         case_full_no,
                         case_official_name,
@@ -139,220 +139,111 @@ class Corpus(Base):
                             self.file_created_time,
                             self.folder_file_name)
 
-def show_corpus(base): 
-    queries = db_session.query(base) 
-    entries = [dict(id=q.id, 
-                case_txt_in_file = q.case_txt_in_file,
-                case_full_no = q.case_full_no,
-                case_official_name = q.case_official_name,
-                case_unofficial_name = q.case_unofficial_name,
-                citedPlace =q.citedPlace,
-                decision_items = q.decision_items,
-                decision_gists = q.decision_gists,
-                main_decision = q.main_decision,
-                reasoning = q.reasoning,
-                case_comment = q.case_comment,
-                related_articles = q.related_articles,
-                applicable_acts = q.applicable_acts,
-                applicable_precedents = q.applicable_precedents,
-                applicable_acts_in_body = q.applicable_acts_in_body,
-                applicable_cases_in_body = q.applicable_cases_in_body,
-                following_cases = q.following_cases,
-                previous_case = q.previous_case,
-                site = q.site,
-                hangul_keyword = q.hangul_keyword,
-                important = q.important,
-                supreme = q.supreme,
-                jeonhap = q.jeonhap,
-                party_info = q.party_info,
-                file_created_time = q.file_created_time,
-                folder_file_name = q.folder_file_name) for q in queries] 
+    def fields_list_getter():
+        
+        corpus_fields = ['id',
+                        'case_txt_in_file',
+                        'case_full_no',
+                        'case_official_name',
+                        'case_unofficial_name',
+                        'citedPlace',
+                        'decision_items',
+                        'decision_gists',
+                        'main_decision',
+                        'reasoning',
+                        'case_comment',
+                        'related_articles',
+                        'applicable_acts',
+                        'applicable_precedents',
+                        'applicable_acts_in_body',
+                        'applicable_cases_in_body',
+                        'following_cases',
+                        'previous_case',
+                        'site',
+                        'hangul_keyword',
+                        'important',
+                        'supreme',
+                        'jeonhap',
+                        'party_info',
+                        'file_created_time',
+                        'folder_file_name']
 
-    print (entries)
-    return entries
+        return corpus_fields
 
-def add_corpus_entry(base, 
-                case_txt_in_file,
-                case_full_no,     
-                case_official_name,
-                case_unofficial_name,
-                citedPlace,
-                decision_items,
-                decision_gists ,          
-                main_decision   ,     
-                reasoning  ,     
-                case_comment   ,       
-                related_articles ,
-                applicable_acts ,
-                applicable_precedents,
-                applicable_acts_in_body,
-                applicable_cases_in_body,
-                following_cases ,
-                previous_case ,       
-                site ,  
-                hangul_keyword ,
-                important ,        
-                supreme  ,      
-                jeonhap ,       
-                party_info  ,  
-                file_created_time,
-                folder_file_name): 
+def init_db():
+    Base.metadata.create_all(engine)
 
-    Base = base
-    t = Base(case_txt_in_file ,
-                case_full_no,     
-                case_official_name,
-                case_unofficial_name,
-                citedPlace,
-                decision_items,
-                decision_gists ,          
-                main_decision   ,     
-                reasoning  ,     
-                case_comment   ,       
-                related_articles ,
-                applicable_acts ,
-                applicable_precedents,
-                applicable_acts_in_body,
-                applicable_cases_in_body,
-                following_cases ,
-                previous_case ,       
-                site ,  
-                hangul_keyword ,
-                important ,        
-                supreme  ,      
-                jeonhap ,       
-                party_info  ,  
-                file_created_time,
-                folder_file_name) 
+def add_entry(base, entry): 
+
+    express = "base("
+    for i in range(len(entry)):
+        express += str("entry["+str(i)+"],")
+    express = express[:-1] + ")"
+    t = eval(express)
 
     db_session.add(t) 
     db_session.commit() 
 
-def main_corpus(limit):
+def delete_entry(base, entry): 
 
-    for i in range(len(df_corpus.index)):
+    fields = base.fields_list_getter()
+    express = "db_session.query(base).filter("
+    i = 0
+    for field in fields:
+        express += str("base."+field+"==entry["+str(i)+"],")
+        i = i + 1
+    express = express[:-1] + ").delete()"
+    exec(express)
+
+    db_session.commit() 
+
+def show_tables(base): 
+    fields = base.fields_list_getter()
+    queries = db_session.query(base) 
+    for q in queries:
+        express = "[dict("
+        for field in fields:
+            express += str(field+"=q."+field+",")
+        express = express[:-1] + ") for q in queries]"
+    entries = eval(express)
+    print ("table entries: " , entries)
+    return entries
+
+def df2db(base, df, limit): 
+
+    fields = base.fields_list_getter()
+    for i in range(len(df.index)):
+
+        entry =[]
         if limit < i : break
-        case_txt_in_file = str(df_corpus['case_txt_in_file'].iloc[i])
-        case_full_no = str(df_corpus['case_full_no'].iloc[i])
-        case_official_name = str(df_corpus['case_official_name'].iloc[i])
-        case_unofficial_name = str(df_corpus['case_unofficial_name'].iloc[i])
-        citedPlace = str(df_corpus['citedPlace'].iloc[i])
-        decision_items = str(df_corpus['decision_items'].iloc[i])
-        decision_gists = str(df_corpus['decision_gists'].iloc[i])
-        main_decision = str(df_corpus['main_decision'].iloc[i])
-        reasoning = str(df_corpus['reasoning'].iloc[i])
-        case_comment = str(df_corpus['case_comment'].iloc[i])
-        related_articles = str(df_corpus['related_articles'].iloc[i])
-        applicable_acts = str(df_corpus['applicable_acts'].iloc[i])
-        applicable_precedents = str(df_corpus['applicable_precedents'].iloc[i])
-        applicable_acts_in_body = str(df_corpus['applicable_acts_in_body'].iloc[i])
-        applicable_cases_in_body = str(df_corpus['applicable_cases_in_body'].iloc[i])
-        following_cases = str(df_corpus['following_cases'].iloc[i])
-        previous_case = str(df_corpus['previous_case'].iloc[i])
-        site = str(df_corpus['site'].iloc[i])
-        hangul_keyword = str(df_corpus['hangul_keyword'].iloc[i])
+        for field in fields:
+            if field == 'id':
+                continue
+            elif field == 'important' or field == 'supreme' or field == 'jeonhap':
+                express = "int(df[\'"+field+"\'].iloc[i])"
+                entry.append(eval(express))
+            else:
+                express = "str(df[\'"+field+"\'].iloc[i])"
+                entry.append(eval(express))
 
-        important = int(df_corpus['important'].iloc[i])
-        supreme = int(df_corpus['supreme'].iloc[i])
-        jeonhap = int(df_corpus['jeonhap'].iloc[i])
+        add_entry(base, entry) 
 
-        party_info = str(df_corpus['party_info'].iloc[i])
-        file_created_time = str(df_corpus['file_created_time'].iloc[i])
-        folder_file_name = str(df_corpus['folder_file_name'].iloc[i])
-                    
-        add_corpus_entry(Corpus, 
-                    case_txt_in_file ,
-                    case_full_no,     
-                    case_official_name,
-                    case_unofficial_name,
-                    citedPlace,
-                    decision_items,
-                    decision_gists ,          
-                    main_decision   ,     
-                    reasoning  ,     
-                    case_comment   ,       
-                    related_articles ,
-                    applicable_acts ,
-                    applicable_precedents,
-                    applicable_acts_in_body,
-                    applicable_cases_in_body,
-                    following_cases ,
-                    previous_case ,       
-                    site ,  
-                    hangul_keyword ,
-                    important ,        
-                    supreme  ,      
-                    jeonhap ,       
-                    party_info  ,  
-                    file_created_time,
-                    folder_file_name) 
-
-    # show_corpus(Corpus)
-    # delete_entry("2015-02-06 09:00:05","test1") 
     db_session.close() 
-
-# def delete_entry(datetime, string): 
-#     db_session.query(Corpus).filter(Corpus.datetime==datetime, Corpus.string==string).delete() 
-#     db_session.commit() 
-
-class Summary(Base): 
-
-    __tablename__ = 'summary' 
-    __table_args__ = {'mysql_engine':'InnoDB', 'mysql_charset':'utf8mb4','mysql_collate':'utf8mb4_unicode_ci'}
-    id = Column(Integer, primary_key=True) 
-    filename = Column(TEXT(collation = 'utf8mb4_unicode_ci')) 
-    case_full_no = Column(TEXT(collation = 'utf8mb4_unicode_ci')) 
-    number = Column(Integer) 
-    items = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
-    gists = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
-    acts = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
-    precedents = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
-
-    def __init__(self, file_name, case_full_no, number, items, gists, acts, precedents):
-
-        self.file_name = file_name
-        self.case_full_no=case_full_no
-        self.number=number
-        self.items=items
-        self.gists=gists
-        self.acts=acts
-        self.precedents=precedents
-
-    def __repr__(self): 
-        return "<Corpus('%d', \
-                        '%s', '%s', '%s', '%s',\
-                        '%s', '%s', '%s'>" \
-                            %(self.id,
-                            self.file_name,
-                            self.case_full_no,
-                            self.number,
-                            self.items,
-                            self.gists,
-                            self.acts,
-                            self.precedents)
-
-def init_db():
-    Base.metadata.create_all(engine)
     
 if __name__ == "__main__" : 
-    
-    init_db()
-
-    # df_corpus
+  
     urls = glob.glob("C:/Users/hcjeo/VSCodeProjects/web2df/saved/df_corpus.csv")
-    df_corpus = pd.read_csv(urls[0])
-    print(df_corpus.columns.tolist())
-    df_corpus.fillna(0)
-    
-    limit = 1000000000
-    main_corpus(limit)
-    
+    for i in range(len(urls)):
+        df = pd.read_csv(urls[i])
+        print(df.columns.tolist())
+        df = df.where((pd.notnull(df)), 0) #nan -> 0
+        
+        init_db()
+        limit = 1000000000
+        df2db(Corpus, df, limit)
+        
     metadata = sqlalchemy.MetaData()
     table = sqlalchemy.Table('corpus', metadata, autoload=True, autoload_with=engine)
     print(table.columns.keys())
 
-    # with engine.connect() as con:
-    #     rs = con.execute('SELECT * FROM corpus')
-    # for row in rs:
-    #     print (row)
-    #     break
+    show_tables(Corpus)
