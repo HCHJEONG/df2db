@@ -78,7 +78,7 @@ def df2db(base, df, limit):
 
     db_session.close() 
 
-# 이상 5개 함수는 어떤 테이블 구현에도 사용될 수 있는 일반적인 유틸리티 함수
+# 이상 5개 함수는 어떤 테이블 구현에도 사용될 수 있는 일반적인 유틸리티 함수(df2db는 string으로 insert)
 
 # 이하는 web2df 패키지로 만들어진 dataframe 객체를 디비와 연결하는 table 클래스
 class Corpus(Base): 
