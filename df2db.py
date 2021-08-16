@@ -7,13 +7,80 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.dialects.mysql import MEDIUMTEXT
 
+# db session
 engine = create_engine("mariadb+pymysql://{user}:{pw}@127.0.0.1:3306/{db}?charset=utf8mb4".format(user='root', pw='3330', db='test'), 
                         encoding='utf-8', connect_args={'connect_timeout': 360}, pool_pre_ping=True)
-
 db_session = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
+
+# table base
 Base = declarative_base() # table 작업을 명령적이 아니라 선언적으로 해주는 클래스
+
+# table/session linking
 Base.query = db_session.query_property()
 
+def init_db():
+    Base.metadata.create_all(engine)
+
+def add_entry(base, entry): 
+
+    express = "base("
+    for i in range(len(entry)):
+        express += str("entry["+str(i)+"],")
+    express = express[:-1] + ")"
+    t = eval(express)
+
+    db_session.add(t) 
+    db_session.commit() 
+
+def delete_entry(base, entry): 
+
+    fields = base.fields_list_getter()
+    express = "db_session.query(base).filter("
+    i = 0
+    for field in fields:
+        express += str("base."+field+"==entry["+str(i)+"],")
+        i = i + 1
+    express = express[:-1] + ").delete()"
+    exec(express)
+
+    db_session.commit() 
+
+def show_tables(base): 
+    fields = base.fields_list_getter()
+    queries = db_session.query(base) 
+    for q in queries:
+        express = "[dict("
+        for field in fields:
+            express += str(field+"=q."+field+",")
+        express = express[:-1] + ") for q in queries]"
+    entries = eval(express)
+    print ("table entries: " , entries)
+    return entries
+
+def df2db(base, df, limit): 
+
+    fields = base.fields_list_getter()
+    for i in range(len(df.index)):
+
+        entry =[]
+        if limit < i : break
+        for field in fields:
+            if field == 'id':
+                continue
+            elif field == 'important' or field == 'supreme' or field == 'jeonhap':
+                express = "int(df[\'"+field+"\'].iloc[i])"
+                entry.append(eval(express))
+            else:
+                express = "str(df[\'"+field+"\'].iloc[i])"
+                entry.append(eval(express))
+
+        add_entry(base, entry) 
+
+    db_session.close() 
+
+# 이상 5개 함수는 어떤 테이블 구현에도 사용될 수 있는 일반적인 유틸리티 함수
+
+# 이하는 web2df 패키지로 만들어진 dataframe 객체를 디비와 연결하는 table 클래스
 class Corpus(Base): 
 
     __tablename__ = 'corpus' 
@@ -170,77 +237,17 @@ class Corpus(Base):
 
         return corpus_fields
 
-def init_db():
-    Base.metadata.create_all(engine)
-
-def add_entry(base, entry): 
-
-    express = "base("
-    for i in range(len(entry)):
-        express += str("entry["+str(i)+"],")
-    express = express[:-1] + ")"
-    t = eval(express)
-
-    db_session.add(t) 
-    db_session.commit() 
-
-def delete_entry(base, entry): 
-
-    fields = base.fields_list_getter()
-    express = "db_session.query(base).filter("
-    i = 0
-    for field in fields:
-        express += str("base."+field+"==entry["+str(i)+"],")
-        i = i + 1
-    express = express[:-1] + ").delete()"
-    exec(express)
-
-    db_session.commit() 
-
-def show_tables(base): 
-    fields = base.fields_list_getter()
-    queries = db_session.query(base) 
-    for q in queries:
-        express = "[dict("
-        for field in fields:
-            express += str(field+"=q."+field+",")
-        express = express[:-1] + ") for q in queries]"
-    entries = eval(express)
-    print ("table entries: " , entries)
-    return entries
-
-def df2db(base, df, limit): 
-
-    fields = base.fields_list_getter()
-    for i in range(len(df.index)):
-
-        entry =[]
-        if limit < i : break
-        for field in fields:
-            if field == 'id':
-                continue
-            elif field == 'important' or field == 'supreme' or field == 'jeonhap':
-                express = "int(df[\'"+field+"\'].iloc[i])"
-                entry.append(eval(express))
-            else:
-                express = "str(df[\'"+field+"\'].iloc[i])"
-                entry.append(eval(express))
-
-        add_entry(base, entry) 
-
-    db_session.close() 
-    
 if __name__ == "__main__" : 
   
     urls = glob.glob("C:/Users/hcjeo/VSCodeProjects/web2df/saved/df_corpus.csv")
     for i in range(len(urls)):
         df = pd.read_csv(urls[i])
         print(df.columns.tolist())
-        df = df.where((pd.notnull(df)), 0) #nan -> 0
+        df = df.where((pd.notnull(df)), 0) # nan -> 0 / where 함수는 True 조건은 내용 유지, False에는 둘째 인자(여기서는 정수 0)로 매핑
         
         init_db()
         limit = 1000000000
-        df2db(Corpus, df, limit)
+        df2db(Corpus, df, limit) # Corpus 클래스의 구조와 df의 구조가 일치되어야 함(df의 'id' 필드는 무시됨에 유의)
         
     metadata = sqlalchemy.MetaData()
     table = sqlalchemy.Table('corpus', metadata, autoload=True, autoload_with=engine)
