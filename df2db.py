@@ -237,6 +237,64 @@ class Corpus(Base):
 
         return corpus_fields
 
+class Summary(Base): 
+
+    __tablename__ = 'Summary' 
+    __table_args__ = {'mysql_engine':'InnoDB', 'mysql_charset':'utf8mb4','mysql_collate':'utf8mb4_unicode_ci'}
+    id = Column(Integer, primary_key=True) 
+    filename = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci'))
+    case_full_no = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
+    acts = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
+    gists = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
+    items = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
+    number = Column(Integer)
+    precedents = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci')) 
+    
+    
+    def __init__(self, filename,
+                        case_full_no,
+                        acts,
+                        gists,
+                        items,
+                        number,
+                        precedents):
+
+        self.filename = filename
+        self.case_full_no = case_full_no
+        self.acts = acts
+        self.gists = gists
+        self.items = items
+        self.number = number
+        self.precedents = precedents
+        
+
+    def __repr__(self): 
+        return "<Corpus('%d', \
+                        '%s', '%s', '%s', '%s',\
+                        '%s', '%d', '%s'>" \
+                            %(self.id,
+                            self.filename,
+                            self.case_full_no,
+                            self.acts,
+                            self.gists,
+
+                            self.items,
+                            self.number,
+                            self.precedents)
+
+    def fields_list_getter():
+        
+        corpus_fields = ['id',
+                        'filename',
+                        'case_full_no',
+                        'acts',
+                        'gists',
+                        'items',
+                        'number',
+                        'precedents']
+
+        return corpus_fields
+
 if __name__ == "__main__" : 
   
     urls = glob.glob("C:/Users/hcjeo/VSCodeProjects/web2df/saved/df_corpus.csv")
