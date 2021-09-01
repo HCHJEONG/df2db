@@ -73,7 +73,7 @@ def df2db(base, df, limit):
             else:
                 express = "str(df[\'"+field+"\'].iloc[i])"
                 entry.append(eval(express))
-
+        
         add_entry(base, entry) 
 
     db_session.close() 
