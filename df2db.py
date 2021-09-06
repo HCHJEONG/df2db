@@ -239,7 +239,7 @@ class Corpus(Base):
 
 class Summary(Base): 
 
-    __tablename__ = 'Summary' 
+    __tablename__ = 'summary' 
     __table_args__ = {'mysql_engine':'InnoDB', 'mysql_charset':'utf8mb4','mysql_collate':'utf8mb4_unicode_ci'}
     id = Column(Integer, primary_key=True) 
     filename = Column(MEDIUMTEXT(collation = 'utf8mb4_unicode_ci'))
@@ -297,7 +297,7 @@ class Summary(Base):
 
 if __name__ == "__main__" : 
   
-    urls = glob.glob("C:/Users/hcjeo/VSCodeProjects/web2df/saved/df_corpus.csv")
+    urls = glob.glob("C:/Users/hcjeo/VSCodeProjects/web2df/saved/df_corpus_new.csv")
     for i in range(len(urls)):
         df = pd.read_csv(urls[i])
         print(df.columns.tolist())
@@ -306,9 +306,21 @@ if __name__ == "__main__" :
         init_db()
         limit = 1000000000
         df2db(Corpus, df, limit) # Corpus 클래스의 구조와 df의 구조가 일치되어야 함(df의 'id' 필드는 무시됨에 유의)
+    
+    urls = glob.glob("C:/Users/hcjeo/VSCodeProjects/web2df/saved/df_summary_new.csv")
+    for i in range(len(urls)):
+        df = pd.read_csv(urls[i])
+        print(df.columns.tolist())
+        df = df.where((pd.notnull(df)), 0) # nan -> 0 / where 함수는 True 조건은 내용 유지, False에는 둘째 인자(여기서는 정수 0)로 매핑
         
-    metadata = sqlalchemy.MetaData()
-    table = sqlalchemy.Table('corpus', metadata, autoload=True, autoload_with=engine)
-    print(table.columns.keys())
+        init_db()
+        limit = 1000000000
+        df2db(Summary, df, limit)
 
-    show_tables(Corpus)
+    metadata = sqlalchemy.MetaData()
+    table_corpus = sqlalchemy.Table('corpus', metadata, autoload=True, autoload_with=engine)
+    print(table_corpus.columns.keys())
+    table_summary = sqlalchemy.Table('summary', metadata, autoload=True, autoload_with=engine)
+    print(table_summary.columns.keys())
+
+    # show_tables(Corpus)
