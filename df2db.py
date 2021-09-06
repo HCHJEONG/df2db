@@ -299,7 +299,7 @@ if __name__ == "__main__" :
   
     urls = glob.glob("C:/Users/hcjeo/VSCodeProjects/web2df/saved/df_corpus_new.csv")
     for i in range(len(urls)):
-        df = pd.read_csv(urls[i])
+        df = pd.read_csv(urls[i]) 
         print(df.columns.tolist())
         df = df.where((pd.notnull(df)), 0) # nan -> 0 / where 함수는 True 조건은 내용 유지, False에는 둘째 인자(여기서는 정수 0)로 매핑
         
