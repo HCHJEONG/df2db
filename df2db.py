@@ -68,7 +68,7 @@ def df2db(base, df, limit):
             if field == 'id':
                 continue
             elif field == 'important' or field == 'supreme' or field == 'jeonhap':
-                express = "int(df[\'"+field+"\'].iloc[i])"
+                express = "int(float(df[\'"+field+"\'].iloc[i]))"
                 entry.append(eval(express))
             else:
                 express = "str(df[\'"+field+"\'].iloc[i])"
