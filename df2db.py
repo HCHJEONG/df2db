@@ -59,6 +59,9 @@ def show_tables(base):
 
 def df2db(base, df, limit): 
 
+    df=df.loc[ df["case_full_no"] != '' , : ] #빈칸 빼고 가져오기
+    df=df.loc[ df["case_full_no"] == df["case_full_no"] , : ] #nan 빼고 가져오기   
+
     fields = base.fields_list_getter()
     for i in range(len(df.index)):
 
@@ -68,7 +71,7 @@ def df2db(base, df, limit):
             if field == 'id':
                 continue
             elif field == 'important' or field == 'supreme' or field == 'jeonhap':
-                express = "int(float(df[\'"+field+"\'].iloc[i]))"
+                express = "int(df[\'"+field+"\'].iloc[i])" # df value 가 'False'인 경우도 있고 이 경우 error 발생함
                 entry.append(eval(express))
             else:
                 express = "str(df[\'"+field+"\'].iloc[i])"
@@ -297,9 +300,9 @@ class Summary(Base):
 
 if __name__ == "__main__" : 
   
-    urls = glob.glob("C:/Users/hcjeo/VSCodeProjects/web2df/saved/df_corpus_new.csv")
+    urls = glob.glob("C:/Users/hcjeo/VSCodeProjects/web2df/saved/df_corpus_new.pickle")
     for i in range(len(urls)):
-        df = pd.read_csv(urls[i]) 
+        df = pd.read_pickle(urls[i]) 
         print(df.columns.tolist())
         df = df.where((pd.notnull(df)), 0) # nan -> 0 / where 함수는 True 조건은 내용 유지, False에는 둘째 인자(여기서는 정수 0)로 매핑
         
@@ -307,9 +310,9 @@ if __name__ == "__main__" :
         limit = 1000000000
         df2db(Corpus, df, limit) # Corpus 클래스의 구조와 df의 구조가 일치되어야 함(df의 'id' 필드는 무시됨에 유의)
     
-    urls = glob.glob("C:/Users/hcjeo/VSCodeProjects/web2df/saved/df_summary_new.csv")
+    urls = glob.glob("C:/Users/hcjeo/VSCodeProjects/web2df/saved/df_summary_new.pickle")
     for i in range(len(urls)):
-        df = pd.read_csv(urls[i])
+        df = pd.read_pickle(urls[i])
         print(df.columns.tolist())
         df = df.where((pd.notnull(df)), 0) # nan -> 0 / where 함수는 True 조건은 내용 유지, False에는 둘째 인자(여기서는 정수 0)로 매핑
         
