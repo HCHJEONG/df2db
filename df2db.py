@@ -64,8 +64,7 @@ def df2db(base, df, limit):
     df=df.loc[ df["case_full_no"] != 0 , : ] #nan 빼고 가져오기   
     df=df.loc[ df["case_full_no"] != False , : ] #nan 빼고 가져오기   
     df = df.where((pd.notnull(df)), 0) # nan -> 0 / where 함수는 True 조건은 내용 유지, False에는 둘째 인자(여기서는 정수 0)로 매핑
-
-
+    
     fields = base.fields_list_getter()
     for i in range(len(df.index)):
 
@@ -308,6 +307,7 @@ if __name__ == "__main__" :
     for i in range(len(urls)):
         df = pd.read_pickle(urls[i]) 
         print(df.columns.tolist())
+        df=df.loc[ (df["decision_items"] != 0) | (df["decision_gists"] != 0) | (df["main_decision"] != 0) | (df["reasoning"] != 0), : ] 
         
         init_db()
         limit = 1000000000
@@ -320,7 +320,14 @@ if __name__ == "__main__" :
         
         init_db()
         limit = 1000000000
-        df2db(Summary, df, limit)
+        df2db(Summary, df, limit) # Summary 클래스의 구조와 df의 구조가 일치되어야 함(df의 'id' 필드는 무시됨에 유의)
+
+    # df = pd.read_pickle(url)
+    # print(df.columns.tolist())
+    
+    # init_db()
+    # limit = 1000000000
+    # df2db(Base_, df, limit) # # Base_ 클래스의 구조와 df의 구조가 일치되어야 함(df의 'id' 필드는 무시됨에 유의)
 
     metadata = sqlalchemy.MetaData()
     table_corpus = sqlalchemy.Table('corpus', metadata, autoload=True, autoload_with=engine)
