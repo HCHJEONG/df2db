@@ -308,6 +308,8 @@ if __name__ == "__main__" :
         df = pd.read_pickle(urls[i]) 
         print(df.columns.tolist())
         df=df.loc[ (df["decision_items"] != 0) | (df["decision_gists"] != 0) | (df["main_decision"] != 0) | (df["reasoning"] != 0), : ] 
+        # df = df.loc[(df['reasoning']!=""), :]
+        df = df.replace({'reasoing': ''}, {'reasoning': 0})
         
         init_db()
         limit = 1000000000
@@ -317,6 +319,8 @@ if __name__ == "__main__" :
     for i in range(len(urls)):
         df = pd.read_pickle(urls[i])
         print(df.columns.tolist())
+        # df = df.loc[(df['reasoning']!=""), :]
+        df = df.replace({'reasoing': ''}, {'reasoning': 0})
         
         init_db()
         limit = 1000000000
