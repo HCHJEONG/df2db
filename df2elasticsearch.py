@@ -13,7 +13,7 @@ from elasticsearch_dsl.search import Search
 tqdm.pandas()
 es = Elasticsearch('http://localhost:9200')
 print(es.info())
-print(es.cat.indices())
+print(es.cat.indices()) # index names: 1. "df_corpus_fullest" 2. "df_summary_full"
 input('Press Enter for Continue...')
 
 def safe_date(date_value):
