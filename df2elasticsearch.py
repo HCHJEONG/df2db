@@ -123,14 +123,28 @@ if __name__ == "__main__":
     print(len(summary_full_keys))
     print(summary_full_keys)
  
-    summary_full_keys = ['case_full_no', 
-                         'acts', 
-                         'gists', 
-                         'items', 
-                         'number', 
-                         'precedents', 
-                         'court_name', 
-                         'case_no']        
+    summary_full_keys = [
+        'case_full_no', 
+        'acts', 
+        'gists', 
+        'items', 
+        'number', 
+        
+        'precedents',
+        'court_name', 
+        'case_no',    
+        'case_official_name', 
+        'case_unofficial_name', 
+        
+        'important', 
+        'supreme', 
+        'jeonhap', 
+        'case_sort', 
+        'decision_date', 
+        
+        'for_lawschool' 
+        ]     
+        
     print(summary_full_keys)
     # df_summary_full = json.loads(df_summary_full.to_json(orient = 'records'))
     
@@ -259,22 +273,41 @@ if __name__ == "__main__":
     mappings_summary = {'properties': {}}
     for field in summary_full_keys:
         
-        if field in ['case_no',
-                     'court_name']:
+        if field in [
+                    'case_no',
+                    'court_name',
+                    'important', 
+                    'supreme', 
+                    'jeonhap', 
+                    'case_sort', 
+                    'for_lawschool'
+                    ]:
             df_summary_full[field] = df_summary_full[field].progress_apply(safe_value)
             mappings_summary['properties'].update({field: {
                                             'type': 'keyword',
                                         }})
+            
         elif field in ['number']:
             df_summary_full[field] = df_summary_full[field].progress_apply(safe_int)
             mappings_summary['properties'].update({field:{
                                         'type': 'byte'
                                     }})
-        elif field in ['case_full_no',
+        
+        elif field in ['decision_date']:
+            df_summary_full[field] = df_summary_full[field].progress_apply(safe_date)
+            mappings_summary['properties'].update({field: {
+                                            'type': 'date',
+                                        }})   
+            
+        elif field in [
+                       'case_full_no',
                        'acts', 
                        'gists', 
                        'items', 
-                       'precedents']:
+                       'precedents',
+                       'case_official_name', 
+                       'case_unofficial_name'
+                       ]:
             df_summary_full[field] = df_summary_full[field].progress_apply(safe_value)
             mappings_summary['properties'].update({field: {
                                             'type': 'text',
