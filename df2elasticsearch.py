@@ -134,7 +134,7 @@ if __name__ == "__main__":
     print(summary_full_keys)
     # df_summary_full = json.loads(df_summary_full.to_json(orient = 'records'))
     
-    # removing duplicate indecies...
+    # removing duplicate indicies...
 
     try:
         es.indices.delete(index = "df_corpus_fullest")
