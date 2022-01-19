@@ -7,48 +7,54 @@ from tqdm import tqdm
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 
-from elasticsearch_dsl.query import Range, Bool, Match, MultiMatch
-from elasticsearch_dsl.search import Search
+# from elasticsearch_dsl.query import Range, Bool, Match, MultiMatch
+# from elasticsearch_dsl.search import Search
 
 tqdm.pandas()
+
+chunk_size = 100
 es = Elasticsearch('http://localhost:9200')
 print(es.info())
 print(es.cat.indices()) # index names: 1. "df_corpus_fullest" 2. "df_summary_full"
-input('Press Enter for Continue...')
-
-def safe_date(date_value):
-    return pd.to_datetime(date_value) if not (date_value == 0 or date_value == '') else datetime(2072,12,20,5,0)
     
 def safe_value(field_val):
-    if field_val == 0 or field_val == 0.0 or field_val == '':
+    if field_val == 0 or field_val == 0.0 or field_val == '' or field_val != field_val:
         field_val = "해당 없음"
     return field_val 
 
+def safe_date(date_value):
+    return datetime(2072,12,20,5,0) if date_value == 0 or date_value == 0.0 or date_value == '' or pd.isnull(pd.to_datetime(date_value)) else pd.to_datetime(date_value)
+
 def safe_int(number):
-    if number == '':
+    if number == '' or number != number:
         number = 0
     return int(number)
 
 def safe_dict(field_val):
-    if field_val == 0 or field_val == 0.0 or field_val == '':
+    if field_val == 0 or field_val == 0.0 or field_val == '' or field_val != field_val:
         field_val = "{}"
     return str(field_val)
 
+def filterKeys(document, use_these_keys):
+    return {key: document[key] for key in use_these_keys} # dictionary comprehension
+
 def doc_generator(df, your_index, keys):
     df_iter = df.iterrows()
-    for i, document in tqdm(df_iter):
-        # if i%5000 == 0:
+    for i, document in tqdm(df_iter, total = len(df)):
+        # if i%30000 == 0:
         #     print(f"\ndataframe index: {i}\n")
-        #     input('enter for continue another 5000 entries...')
+        #     input('enter for continue another 30000 entries...')
+        #     pprint({
+        #         "_index": your_index,
+        #         "_id": f"{i}",
+        #         "_source": filterKeys(document, keys),
+        #     })
         yield {
             "_index": your_index,
             "_id": f"{i}",
             "_source": filterKeys(document, keys),
         }
     # raise StopIteration
-
-def filterKeys(document, use_these_keys):
-    return {key: document[key] for key in use_these_keys} # dictionary comprehension
 
 # def doc_list_factory(df, your_index, column_list):
 #     doc_list = []
@@ -62,10 +68,51 @@ if __name__ == "__main__":
     
     # data loading...
     
-    df_corpus_fullest = pd.read_pickle('../web2df/saved/df_corpus_fullest.pickle')
+    input('Press Enter for df summary full loading...')
+    df_summary_full = pd.read_pickle('../web2df/saved/df_summary_full.pickle').reset_index()
+    print()
+    print(df_summary_full.info())
+    pprint(df_summary_full.head(2).to_dict(orient = 'records'))
+    print()
+    summary_full_keys = [*df_summary_full] 
+    print(f"There are {len(summary_full_keys)} fields in df summary full as follows: \n")
+    print(summary_full_keys)
+    print()
+ 
+    summary_full_keys = [
+        'case_full_no', 
+        'acts', 
+        'gists', 
+        'items', 
+        'number', 
+        
+        'precedents',
+        'court_name', 
+        'case_no',    
+        'case_official_name', 
+        'case_unofficial_name', 
+        
+        'important', 
+        'supreme', 
+        'jeonhap', 
+        'case_sort', 
+        'decision_date', 
+        
+        'for_lawschool' 
+        ]  
+       
+    print(f"After selection, there are now {len(summary_full_keys)} fields in df summary full as follows: \n")
+    print(summary_full_keys)
+    print()
+    # df_summary_full = json.loads(df_summary_full.to_json(orient = 'records'))
+    
+    input('Press Enter for df corpus fullest loading...')
+    df_corpus_fullest = pd.read_pickle('../web2df/saved/df_corpus_fullest.pickle').reset_index()
     print()
     print(df_corpus_fullest.info())
     pprint(df_corpus_fullest.head(2).to_dict(orient = 'records'))
+    print()
+    
     # * for unpacking a list and a dictionary key list
     # ** for unpacking a dictionary with key-0value pairs
     corpus_fullest_keys = [*df_corpus_fullest] # list(df_corpus_fullest) | df_corpus_fullest.columns.tolist() | list(df_corpus_fullest.columns.values)
@@ -75,8 +122,10 @@ if __name__ == "__main__":
     else:
         df_corpus_fullest['closing_argument'] = '2072-12-20'
     
-    print(len(corpus_fullest_keys))
+    print(f"There are {len(corpus_fullest_keys)} fields in df corpus fullest as follows: \n")
     print(corpus_fullest_keys)
+    print()
+    
     corpus_fullest_keys = ['case_full_no', 
                            'case_official_name', 
                            'case_unofficial_name', 
@@ -112,60 +161,34 @@ if __name__ == "__main__":
                            'for_lawschool', 
                            'party_info_dict', 
                            'closing_argument']
+    
+    print(f"After selection, there are only {len(corpus_fullest_keys)} fields in df corpus fullest as follows: \n")
     print(corpus_fullest_keys)
-    # df_corpus_fullest = json.loads(df_corpus_fullest.to_json(orient = 'records'))
-    
-    df_summary_full = pd.read_pickle('../web2df/saved/df_summary_full.pickle')
     print()
-    print(df_summary_full.info())
-    pprint(df_summary_full.head(2).to_dict(orient = 'records'))
-    summary_full_keys = [*df_summary_full] 
-    print(len(summary_full_keys))
-    print(summary_full_keys)
- 
-    summary_full_keys = [
-        'case_full_no', 
-        'acts', 
-        'gists', 
-        'items', 
-        'number', 
+    # df_corpus_fullest = json.loads(df_corpus_fullest.to_json(orient = 'records'))
         
-        'precedents',
-        'court_name', 
-        'case_no',    
-        'case_official_name', 
-        'case_unofficial_name', 
-        
-        'important', 
-        'supreme', 
-        'jeonhap', 
-        'case_sort', 
-        'decision_date', 
-        
-        'for_lawschool' 
-        ]     
-        
-    print(summary_full_keys)
-    # df_summary_full = json.loads(df_summary_full.to_json(orient = 'records'))
-    
     # removing duplicate indicies...
+    input("Press Enter for Removing Summary/Corpus Indices in ELK DB...")
+    print()
 
-    try:
-        es.indices.delete(index = "df_corpus_fullest")
-    except:
-        print("no df_corpus_fullest index...")
-        
     try:
         es.indices.delete(index = "df_summary_full")
     except:
         print("no df_summary_full index...")
-        
+ 
+    try:
+        es.indices.delete(index = "df_corpus_fullest")
+    except:
+        print("no df_corpus_fullest index...")
+               
     print(es.cat.indices())
+    print()
     
     # indexing...
-    input("Press Enter for Indexing of df corpus fullest and df summary full...\n")
+    input("Press Enter for Indexing of df_summary_full and df_corpus_fullest...\n")
     print()
-    settings = {
+    
+    common_settings = {
         'analysis':{
             'analyzer':{
                 'korean': {
@@ -174,29 +197,134 @@ if __name__ == "__main__":
             }
         }
     }
-    pprint(settings)
+    print("Common Settings for Indices...")
+    pprint(common_settings)    
     print()
+    
+    print()
+    print("==== summary ====\n") # for summary ##########
+  
+    mappings_summary = {'properties': {}}
+    for field in summary_full_keys:
+        if field in ['case_full_no']:
+            df_summary_full[field] = df_summary_full[field].progress_apply(safe_value)
+            mappings_summary['properties'].update({field: {
+                                            'type': 'text',
+                                            'fields': {
+                                                'keyword': {
+                                                    'type': 'keyword',
+                                                }
+                                            }
+                                        }})    
+            
+        elif field in [
+                    'case_no',
+                    'court_name',
+                    'important', 
+                    'supreme', 
+                    'jeonhap', 
+                    'case_sort', 
+                    'for_lawschool'
+                    ]:
+            df_summary_full[field] = df_summary_full[field].progress_apply(safe_value)
+            mappings_summary['properties'].update({field: {
+                                            'type': 'keyword',
+                                        }})
+            
+        elif field in ['number']:
+            df_summary_full[field] = df_summary_full[field].progress_apply(safe_int)
+            mappings_summary['properties'].update({field:{
+                                        'type': 'byte'
+                                    }})
+        
+        elif field in ['decision_date']:
+            df_summary_full[field] = df_summary_full[field].progress_apply(safe_date)
+            mappings_summary['properties'].update({field: {
+                                            'type': 'date',
+                                        }})   
+            
+        elif field in [
+                       'acts', 
+                       'gists', 
+                       'items', 
+                       'precedents',
+                       'case_official_name', 
+                       'case_unofficial_name'
+                       ]:
+            df_summary_full[field] = df_summary_full[field].progress_apply(safe_value)
+            mappings_summary['properties'].update({field: {
+                                            'type': 'text',
+                                            'analyzer' : 'korean',
+                                            'fields': {
+                                                'simple_analysis': {
+                                                    'type': 'text',
+                                                    'analyzer': 'simple'
+                                                }
+                                            }
+                                        }})
+    
+    print()
+    print("Summary Mappings:")
+    pprint(mappings_summary)
+    print()
+    input('enter for index creating and data inserting...')
+    print()
+    
+    es.indices.create(index = "df_summary_full",
+                      settings = common_settings,
+                      mappings = mappings_summary,
+                      )
+    
+    doc_gen = doc_generator(df_summary_full,   
+                                "df_summary_full",
+                                summary_full_keys)  
+    # doc_list = doc_list_factory(df_summary_full,   
+    #                             "df_summary_full",
+    #                             summary_full_keys)  
+    bulk(es, 
+        doc_gen,
+        chunk_size = chunk_size,
+        request_timeout = 60*5
+        # raise_on_error = False
+        )
+    
+    print()
+    res = es.indices.get(index="df_summary_full", pretty=True)
+    pprint(res)
+    print("Summary Done...")
+    print()
+    
     print("==== corpus ====\n") # for corpus ##########
     
     mappings_corpus = {'properties': {}}
     for field in corpus_fullest_keys:
 
-        if field in [
-                     'important',
-                     'supreme',
-                     'jeonhap',
-                     'court_names',
-                     'case_no',
-                     'code',
-                     'case_sort',
-                     'for_lawschool'
+        if field in ['case_full_no']:
+            df_corpus_fullest[field] = df_corpus_fullest[field].progress_apply(safe_value)
+            mappings_corpus['properties'].update({field: {
+                                            'type': 'text',
+                                            'fields': {
+                                                'keyword': {
+                                                    'type': 'keyword',
+                                                }
+                                            }
+                                        }})    
+        
+        elif field in [
+                        'important',
+                        'supreme',
+                        'jeonhap',
+                        'court_names',
+                        'case_no',
+                        'code',
+                        'case_sort',
+                        'for_lawschool'
                      ]:
             df_corpus_fullest[field] = df_corpus_fullest[field].progress_apply(safe_value)
             mappings_corpus['properties'].update({field: {
                                             'type': 'keyword',
                                         }})
         elif field in [
-                       'case_full_no', 
                        'decision_items', 
                        'decision_gists', 
                        'main_decision', 
@@ -227,6 +355,7 @@ if __name__ == "__main__":
                                                 }
                                             }
                                         }})
+            
         elif field in ['decision_date', 
                        'closing_argument']:
             df_corpus_fullest[field] = df_corpus_fullest[field].progress_apply(safe_date)
@@ -240,13 +369,16 @@ if __name__ == "__main__":
             mappings_corpus['properties'].update({field: {
                                             'type': 'text',
                                         }})
-                       
-            
+    
+    print()
+    print("Corpus Mappings:")
     pprint(mappings_corpus)
-    input('enter for continue...')
+    print()
+    input('enter for index creating and data inserting...')
+    print()
         
     es.indices.create(index = "df_corpus_fullest",
-                      settings = settings,
+                      settings = common_settings,
                       mappings = mappings_corpus
                       )
      
@@ -259,89 +391,15 @@ if __name__ == "__main__":
     
     bulk(es, 
         doc_gen,
-        chunk_size = 250,
+        chunk_size = chunk_size,
         request_timeout = 60*5
         # raise_on_error = False
         )
     # res = es.get(index="df_corpus_fullest", id=1)
     res = es.indices.get(index="df_corpus_fullest", pretty=True)
-    pprint(res)
-    
     print()
-    print("==== summary ====\n") # for summary ##########
-  
-    mappings_summary = {'properties': {}}
-    for field in summary_full_keys:
-        
-        if field in [
-                    'case_no',
-                    'court_name',
-                    'important', 
-                    'supreme', 
-                    'jeonhap', 
-                    'case_sort', 
-                    'for_lawschool'
-                    ]:
-            df_summary_full[field] = df_summary_full[field].progress_apply(safe_value)
-            mappings_summary['properties'].update({field: {
-                                            'type': 'keyword',
-                                        }})
-            
-        elif field in ['number']:
-            df_summary_full[field] = df_summary_full[field].progress_apply(safe_int)
-            mappings_summary['properties'].update({field:{
-                                        'type': 'byte'
-                                    }})
-        
-        elif field in ['decision_date']:
-            df_summary_full[field] = df_summary_full[field].progress_apply(safe_date)
-            mappings_summary['properties'].update({field: {
-                                            'type': 'date',
-                                        }})   
-            
-        elif field in [
-                       'case_full_no',
-                       'acts', 
-                       'gists', 
-                       'items', 
-                       'precedents',
-                       'case_official_name', 
-                       'case_unofficial_name'
-                       ]:
-            df_summary_full[field] = df_summary_full[field].progress_apply(safe_value)
-            mappings_summary['properties'].update({field: {
-                                            'type': 'text',
-                                            'analyzer' : 'korean',
-                                            'fields': {
-                                                'simple_analysis': {
-                                                    'type': 'text',
-                                                    'analyzer': 'simple'
-                                                }
-                                            }
-                                        }})
-    pprint(mappings_summary)
-    input('enter for continue...')
-    
-    es.indices.create(index = "df_summary_full",
-                      settings = settings,
-                      mappings = mappings_summary,
-                      )
-    
-    doc_gen = doc_generator(df_summary_full,   
-                                "df_summary_full",
-                                summary_full_keys)  
-    # doc_list = doc_list_factory(df_summary_full,   
-    #                             "df_summary_full",
-    #                             summary_full_keys)  
-    bulk(es, 
-        doc_gen,
-        chunk_size = 250,
-        request_timeout = 60*5
-        # raise_on_error = False
-        )
-    
-    res = es.indices.get(index="df_summary_full", pretty=True)
     pprint(res)
+    print("Corpus Done...")
     
     es.indices.refresh(index="df_corpus_fullest")
     es.indices.refresh(index="df_summary_full")
