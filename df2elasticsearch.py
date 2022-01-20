@@ -17,9 +17,16 @@ es = Elasticsearch('http://localhost:9200')
 print(es.info())
 print(es.cat.indices()) # index names: 1. "df_corpus_fullest" 2. "df_summary_full"
     
+def safe_keyword(field_val):
+    if field_val == 0 or field_val == '' or field_val != field_val:
+        field_val = 0.0
+    elif field_val == 1 or field_val == True:
+        field_val = 1.0
+    return field_val 
+
 def safe_value(field_val):
     if field_val == 0 or field_val == 0.0 or field_val == '' or field_val != field_val:
-        field_val = "해당 없음"
+        field_val = "해당 없음" 
     return field_val 
 
 def safe_date(date_value):
@@ -226,7 +233,7 @@ if __name__ == "__main__":
                     'case_sort', 
                     'for_lawschool'
                     ]:
-            df_summary_full[field] = df_summary_full[field].progress_apply(safe_value)
+            df_summary_full[field] = df_summary_full[field].progress_apply(safe_keyword)
             mappings_summary['properties'].update({field: {
                                             'type': 'keyword',
                                         }})
@@ -320,7 +327,7 @@ if __name__ == "__main__":
                         'case_sort',
                         'for_lawschool'
                      ]:
-            df_corpus_fullest[field] = df_corpus_fullest[field].progress_apply(safe_value)
+            df_corpus_fullest[field] = df_corpus_fullest[field].progress_apply(safe_keyword)
             mappings_corpus['properties'].update({field: {
                                             'type': 'keyword',
                                         }})
