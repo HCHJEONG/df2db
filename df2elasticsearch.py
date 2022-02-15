@@ -30,7 +30,7 @@ def safe_value(field_val):
     return field_val 
 
 def safe_date(date_value):
-    return datetime(2072,12,20,5,0) if date_value == 0 or date_value == 0.0 or date_value == '' or pd.isnull(pd.to_datetime(date_value)) else pd.to_datetime(date_value)
+    return datetime(2072,12,20,5,0) if date_value == 0 or date_value == 0.0 or date_value == 'no_info' or date_value == '' or pd.isnull(pd.to_datetime(date_value)) else pd.to_datetime(date_value)
 
 def safe_int(number):
     if number == '' or number != number:
