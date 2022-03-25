@@ -75,18 +75,18 @@ if __name__ == "__main__":
     
     # data loading...
     
-    input('Press Enter for df summary full loading...')
-    df_summary_full = pd.read_pickle('../web2df/saved/df_summary_full.pickle').reset_index()
+    input('Press Enter for df summary fullest loading...')
+    df_summary_fullest = pd.read_pickle('../web2df/saved/df_summary_fullest.pickle').reset_index()
     print()
-    print(df_summary_full.info())
-    pprint(df_summary_full.head(2).to_dict(orient = 'records'))
+    print(df_summary_fullest.info())
+    pprint(df_summary_fullest.head(2).to_dict(orient = 'records'))
     print()
-    summary_full_keys = [*df_summary_full] 
-    print(f"There are {len(summary_full_keys)} fields in df summary full as follows: \n")
-    print(summary_full_keys)
+    summary_fullest_keys = [*df_summary_fullest] 
+    print(f"There are {len(summary_fullest_keys)} fields in df summary fullest as follows: \n")
+    print(summary_fullest_keys)
     print()
  
-    summary_full_keys = [
+    summary_fullest_keys = [
         'case_full_no', 
         'acts', 
         'gists', 
@@ -105,11 +105,12 @@ if __name__ == "__main__":
         'case_sort', 
         'decision_date', 
         
-        'for_lawschool' 
+        'for_lawschool',
+        'acts_splits'
         ]  
        
-    print(f"After selection, there are now {len(summary_full_keys)} fields in df summary full as follows: \n")
-    print(summary_full_keys)
+    print(f"After selection, there are now {len(summary_fullest_keys)} fields in df summary fullest as follows: \n")
+    print(summary_fullest_keys)
     print()
     # df_summary_full = json.loads(df_summary_full.to_json(orient = 'records'))
     
@@ -179,9 +180,10 @@ if __name__ == "__main__":
     print()
 
     try:
-        es.indices.delete(index = "df_summary_full")
+        # es.indices.delete(index = "df_summary_full")
+        es.indices.delete(index = "df_summary_fullest")
     except:
-        print("no df_summary_full index...")
+        print("no df_summary_fullest index...")
  
     try:
         es.indices.delete(index = "df_corpus_fullest")
@@ -192,7 +194,7 @@ if __name__ == "__main__":
     print()
     
     # indexing...
-    input("Press Enter for Indexing of df_summary_full and df_corpus_fullest...\n")
+    input("Press Enter for Indexing of df_summary_fullest and df_corpus_fullest...\n")
     print()
     
     common_settings = {
@@ -212,9 +214,9 @@ if __name__ == "__main__":
     print("==== summary ====\n") # for summary ##########
   
     mappings_summary = {'properties': {}}
-    for field in summary_full_keys:
+    for field in summary_fullest_keys:
         if field in ['case_full_no']:
-            df_summary_full[field] = df_summary_full[field].progress_apply(safe_value)
+            df_summary_fullest[field] = df_summary_fullest[field].progress_apply(safe_value)
             mappings_summary['properties'].update({field: {
                                             'type': 'text',
                                             'fields': {
@@ -233,32 +235,33 @@ if __name__ == "__main__":
                     'case_sort', 
                     'for_lawschool'
                     ]:
-            df_summary_full[field] = df_summary_full[field].progress_apply(safe_keyword)
+            df_summary_fullest[field] = df_summary_fullest[field].progress_apply(safe_keyword)
             mappings_summary['properties'].update({field: {
                                             'type': 'keyword',
                                         }})
             
         elif field in ['number']:
-            df_summary_full[field] = df_summary_full[field].progress_apply(safe_int)
+            df_summary_fullest[field] = df_summary_fullest[field].progress_apply(safe_int)
             mappings_summary['properties'].update({field:{
                                         'type': 'byte'
                                     }})
         
         elif field in ['decision_date']:
-            df_summary_full[field] = df_summary_full[field].progress_apply(safe_date)
+            df_summary_fullest[field] = df_summary_fullest[field].progress_apply(safe_date)
             mappings_summary['properties'].update({field: {
                                             'type': 'date',
                                         }})   
             
         elif field in [
                        'acts', 
+                       'acts_splits',
                        'gists', 
                        'items', 
                        'precedents',
                        'case_official_name', 
                        'case_unofficial_name'
                        ]:
-            df_summary_full[field] = df_summary_full[field].progress_apply(safe_value)
+            df_summary_fullest[field] = df_summary_fullest[field].progress_apply(safe_value)
             mappings_summary['properties'].update({field: {
                                             'type': 'text',
                                             'analyzer' : 'korean',
@@ -282,9 +285,9 @@ if __name__ == "__main__":
                       mappings = mappings_summary,
                       )
     
-    doc_gen = doc_generator(df_summary_full,   
-                                "df_summary_full",
-                                summary_full_keys)  
+    doc_gen = doc_generator(df_summary_fullest,   
+                                "df_summary_fullest",
+                                summary_fullest_keys)  
     # doc_list = doc_list_factory(df_summary_full,   
     #                             "df_summary_full",
     #                             summary_full_keys)  
@@ -296,7 +299,7 @@ if __name__ == "__main__":
         )
     
     print()
-    res = es.indices.get(index="df_summary_full", pretty=True)
+    res = es.indices.get(index="df_summary_fullest", pretty=True)
     pprint(res)
     print("Summary Done...")
     print()
@@ -409,7 +412,7 @@ if __name__ == "__main__":
     print("Corpus Done...")
     
     es.indices.refresh(index="df_corpus_fullest")
-    es.indices.refresh(index="df_summary_full")
+    es.indices.refresh(index="df_summary_fullest")
 
     ''' 
     import elasticsearch
