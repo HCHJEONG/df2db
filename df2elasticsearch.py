@@ -13,10 +13,7 @@ from elasticsearch.helpers import bulk
 tqdm.pandas()
 
 chunk_size = 100
-es = Elasticsearch('http://localhost:9200')
-print(es.info())
-print(es.cat.indices()) # index names: 1. "df_corpus_fullest" 2. "df_summary_full"
-    
+
 def safe_keyword(field_val):
     if field_val == 0 or field_val == '' or field_val != field_val:
         field_val = 0.0
@@ -74,6 +71,10 @@ def doc_generator(df, your_index, keys):
 if __name__ == "__main__":
     
     # data loading...
+    
+    es = Elasticsearch('http://localhost:9200')
+    print(es.info())
+    print(es.cat.indices()) # index names: 1. "df_corpus_fullest" 2. "df_summary_full"
     
     input('Press Enter for df summary fullest loading...')
     df_summary_fullest = pd.read_pickle('../web2df/saved/df_summary_fullest.pickle').reset_index()
