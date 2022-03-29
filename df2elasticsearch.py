@@ -105,7 +105,6 @@ if __name__ == "__main__":
     # input('...')
 
     current_act_keys = [
-        'index', 
         'name', 
         'no', 
         'link', 
@@ -121,7 +120,7 @@ if __name__ == "__main__":
 
     mappings_current_act = {'properties': {}}
     for field in current_act_keys:
-        if field in ['link', 'index', 'no']:
+        if field in ['link', 'no']:
             df_current_act[field] = df_current_act[field].progress_apply(safe_value)
             mappings_current_act['properties'].update({field: {
                                             'type': 'text',
@@ -174,6 +173,7 @@ if __name__ == "__main__":
     print()
     print("Current Act Mappings:")
     pprint(mappings_current_act)
+    print("len: ", len(df_current_act))
     print()
     input('enter for index creating and data inserting...')
     print()
@@ -317,6 +317,7 @@ if __name__ == "__main__":
     print()
     print("Summary Mappings:")
     pprint(mappings_summary)
+    print("len: ", len(df_summary_fullest))
     print()
     input('enter for index creating and data inserting...')
     print()
@@ -493,6 +494,7 @@ if __name__ == "__main__":
     print()
     print("Corpus Mappings:")
     pprint(mappings_corpus)
+    print("len: ", len(df_corpus_fullest))
     print()
     input('enter for index creating and data inserting...')
     print()
