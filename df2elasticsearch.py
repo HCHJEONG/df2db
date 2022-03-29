@@ -14,6 +14,16 @@ tqdm.pandas()
 
 chunk_size = 100
 
+common_settings = {
+    'analysis':{
+        'analyzer':{
+            'korean': {
+                'tokenizer': 'nori_tokenizer'
+            }
+        }
+    }
+}
+
 def safe_keyword(field_val):
     if field_val == 0 or field_val == '' or field_val != field_val:
         field_val = 0.0
@@ -70,12 +80,147 @@ def doc_generator(df, your_index, keys):
 
 if __name__ == "__main__":
     
-    # data loading...
-    
     es = Elasticsearch('http://localhost:9200')
+    print()
     print(es.info())
-    print(es.cat.indices()) # index names: 1. "df_corpus_fullest" 2. "df_summary_full"
+    print(es.cat.indices()) # index names: 1. "df_corpus_fullest" 2. "df_summary_fullest" 3. "df_current_act"
+
+    # removing duplicate indicies...
+    input("Press Enter for Removing CurrentAct/Summary/Corpus Indices in ELK DB...")
+    print()
+
+    try:
+        es.indices.delete(index = "df_current_act")
+    except:
+        print("no df_current_act index...")
+ 
+    try:
+        es.indices.delete(index = "df_summary_fullest")
+    except:
+        print("no df_summary_fullest index...")
+ 
+    try:
+        es.indices.delete(index = "df_corpus_fullest")
+    except:
+        print("no df_corpus_fullest index...")
+               
+    print(es.cat.indices())
+    print()
+
+    print("Common Settings for Indices...")
+    pprint(common_settings)    
+    print()
     
+    input('Press Enter for current act loading...')
+    df_current_act = pd.read_pickle('../web2df/saved/current_act.pickle').reset_index()
+    print()
+    print(df_current_act.info())
+    pprint(df_current_act.head(2).to_dict(orient = 'records'))
+    print()
+    current_act_keys = [*df_current_act] 
+    print(f"There are {len(current_act_keys)} fields in df current act as follows: \n")
+    print(current_act_keys)
+    print()
+    # input('...')
+
+    current_act_keys = [
+        'index', 
+        'name', 
+        'no', 
+        'link', 
+        'body', 
+        ]  
+       
+    print(f"After selection, there are now {len(current_act_keys)} fields in df current act as follows: \n")
+    print(current_act_keys)
+    print()
+
+    input("Press Enter for Indexing of df_current_act...\n")
+    print()
+
+    mappings_current_act = {'properties': {}}
+    for field in current_act_keys:
+        if field in ['name', 'link']:
+            df_current_act[field] = df_current_act[field].progress_apply(safe_value)
+            mappings_current_act['properties'].update({field: {
+                                            'type': 'text',
+                                            'fields': {
+                                                'keyword': {
+                                                    'type': 'keyword',
+                                                }
+                                            }
+                                        }})    
+            
+        # elif field in [
+        #             'case_no',
+        #             'court_name',
+        #             'important', 
+        #             'supreme', 
+        #             'jeonhap', 
+        #             'case_sort', 
+        #             'for_lawschool'
+        #             ]:
+        #     df_summary_fullest[field] = df_summary_fullest[field].progress_apply(safe_keyword)
+        #     mappings_summary['properties'].update({field: {
+        #                                     'type': 'keyword',
+        #                                 }})
+            
+        elif field in ['index', 'no']:
+            df_current_act[field] = df_current_act[field].progress_apply(safe_int)
+            mappings_current_act['properties'].update({field:{
+                                        'type': 'byte'
+                                    }})
+        
+        # elif field in ['decision_date']:
+        #     df_summary_fullest[field] = df_summary_fullest[field].progress_apply(safe_date)
+        #     mappings_summary['properties'].update({field: {
+        #                                     'type': 'date',
+        #                                 }})   
+            
+        elif field in ['body']:
+            df_current_act[field] = df_current_act[field].progress_apply(safe_value)
+            mappings_current_act['properties'].update({field: {
+                                            'type': 'text',
+                                            'analyzer' : 'korean',
+                                            'fields': {
+                                                'simple_analysis': {
+                                                    'type': 'text',
+                                                    'analyzer': 'simple'
+                                                }
+                                            }
+                                        }})
+    
+    print()
+    print("Current Act Mappings:")
+    pprint(mappings_current_act)
+    print()
+    input('enter for index creating and data inserting...')
+    print()
+    
+    es.indices.create(index = "df_current_act",
+                      settings = common_settings,
+                      mappings = mappings_current_act,
+                      )
+    
+    doc_gen = doc_generator(df_current_act,   
+                                "df_current_act",
+                                current_act_keys)  
+    # doc_list = doc_list_factory(df_summary_full,   
+    #                             "df_summary_full",
+    #                             summary_full_keys)  
+    bulk(es, 
+        doc_gen,
+        chunk_size = chunk_size,
+        request_timeout = 60*5,
+        raise_on_error = False
+        )
+    
+    print()
+    res = es.indices.get(index="df_current_act", pretty=True)
+    pprint(res)
+    print("Current Act Done...")
+    print()
+
     input('Press Enter for df summary fullest loading...')
     df_summary_fullest = pd.read_pickle('../web2df/saved/df_summary_fullest.pickle').reset_index()
     print()
@@ -113,107 +258,9 @@ if __name__ == "__main__":
     print(f"After selection, there are now {len(summary_fullest_keys)} fields in df summary fullest as follows: \n")
     print(summary_fullest_keys)
     print()
-    # df_summary_full = json.loads(df_summary_full.to_json(orient = 'records'))
-    
-    input('Press Enter for df corpus fullest loading...')
-    df_corpus_fullest = pd.read_pickle('../web2df/saved/df_corpus_fullest.pickle').reset_index()
-    print()
-    print(df_corpus_fullest.info())
-    pprint(df_corpus_fullest.head(2).to_dict(orient = 'records'))
-    print()
-    
-    # * for unpacking a list and a dictionary key list
-    # ** for unpacking a dictionary with key-0value pairs
-    corpus_fullest_keys = [*df_corpus_fullest] # list(df_corpus_fullest) | df_corpus_fullest.columns.tolist() | list(df_corpus_fullest.columns.values)
-    
-    if 'closing_argument' in corpus_fullest_keys:
-        pass
-    else:
-        df_corpus_fullest['closing_argument'] = '2072-12-20'
-    
-    print(f"There are {len(corpus_fullest_keys)} fields in df corpus fullest as follows: \n")
-    print(corpus_fullest_keys)
-    print()
-    
-    corpus_fullest_keys = ['case_full_no', 
-                           'case_official_name', 
-                           'case_unofficial_name', 
-                           'citedPlace', 
-                           'decision_items', 
-                           
-                           'decision_gists', 
-                           'main_decision', 
-                           'reasoning', 
-                           'case_comment', 
-                           'related_articles', 
-                           
-                           'applicable_acts', 
-                           'applicable_precedents', 
-                           'applicable_acts_in_body', 
-                           'applicable_cases_in_body', 
-                           'following_cases', 
-                           
-                           'previous_case', 
-                           'important', 
-                           'supreme', 
-                           'jeonhap', 
-                           'party_info', 
-                           
-                           'court_names', 
-                           'case_no', 
-                           'code', 
-                           'case_sort', 
-                           'decision_date', 
-                            
-                           'judge', 
-                           'repealed_cases', 
-                           'for_lawschool', 
-                           'party_info_dict', 
-                           'closing_argument']
-    
-    print(f"After selection, there are only {len(corpus_fullest_keys)} fields in df corpus fullest as follows: \n")
-    print(corpus_fullest_keys)
-    print()
-    # df_corpus_fullest = json.loads(df_corpus_fullest.to_json(orient = 'records'))
-        
-    # removing duplicate indicies...
-    input("Press Enter for Removing Summary/Corpus Indices in ELK DB...")
-    print()
 
-    try:
-        # es.indices.delete(index = "df_summary_full")
-        es.indices.delete(index = "df_summary_fullest")
-    except:
-        print("no df_summary_fullest index...")
- 
-    try:
-        es.indices.delete(index = "df_corpus_fullest")
-    except:
-        print("no df_corpus_fullest index...")
-               
-    print(es.cat.indices())
+    input("Press Enter for Indexing of df_summary_fullest...\n")
     print()
-    
-    # indexing...
-    input("Press Enter for Indexing of df_summary_fullest and df_corpus_fullest...\n")
-    print()
-    
-    common_settings = {
-        'analysis':{
-            'analyzer':{
-                'korean': {
-                    'tokenizer': 'nori_tokenizer'
-                }
-            }
-        }
-    }
-    print("Common Settings for Indices...")
-    pprint(common_settings)    
-    print()
-    
-    print()
-    print("==== summary ====\n") # for summary ##########
-  
     mappings_summary = {'properties': {}}
     for field in summary_fullest_keys:
         if field in ['case_full_no']:
@@ -281,7 +328,7 @@ if __name__ == "__main__":
     input('enter for index creating and data inserting...')
     print()
     
-    es.indices.create(index = "df_summary_full",
+    es.indices.create(index = "df_summary_fullest",
                       settings = common_settings,
                       mappings = mappings_summary,
                       )
@@ -305,8 +352,65 @@ if __name__ == "__main__":
     print("Summary Done...")
     print()
     
-    print("==== corpus ====\n") # for corpus ##########
+    input('Press Enter for df corpus fullest loading...')
+    df_corpus_fullest = pd.read_pickle('../web2df/saved/df_corpus_fullest.pickle').reset_index()
+    print()
+    print(df_corpus_fullest.info())
+    pprint(df_corpus_fullest.head(2).to_dict(orient = 'records'))
+    print()
     
+    corpus_fullest_keys = [*df_corpus_fullest]
+    
+    if 'closing_argument' in corpus_fullest_keys:
+        pass
+    else:
+        df_corpus_fullest['closing_argument'] = '2072-12-20'
+    
+    print(f"There are {len(corpus_fullest_keys)} fields in df corpus fullest as follows: \n")
+    print(corpus_fullest_keys)
+    print()
+    
+    corpus_fullest_keys = ['case_full_no', 
+                           'case_official_name', 
+                           'case_unofficial_name', 
+                           'citedPlace', 
+                           'decision_items', 
+                           
+                           'decision_gists', 
+                           'main_decision', 
+                           'reasoning', 
+                           'case_comment', 
+                           'related_articles', 
+                           
+                           'applicable_acts', 
+                           'applicable_precedents', 
+                           'applicable_acts_in_body', 
+                           'applicable_cases_in_body', 
+                           'following_cases', 
+                           
+                           'previous_case', 
+                           'important', 
+                           'supreme', 
+                           'jeonhap', 
+                           'party_info', 
+                           
+                           'court_names', 
+                           'case_no', 
+                           'code', 
+                           'case_sort', 
+                           'decision_date', 
+                            
+                           'judge', 
+                           'repealed_cases', 
+                           'for_lawschool', 
+                           'party_info_dict', 
+                           'closing_argument']
+    
+    print(f"After selection, there are only {len(corpus_fullest_keys)} fields in df corpus fullest as follows: \n")
+    print(corpus_fullest_keys)
+    print()
+    
+    input("Press Enter for Indexing of df_summary_fullest...\n")
     mappings_corpus = {'properties': {}}
     for field in corpus_fullest_keys:
 
@@ -412,6 +516,7 @@ if __name__ == "__main__":
     pprint(res)
     print("Corpus Done...")
     
+    es.indices.refresh(index="df_current_act")
     es.indices.refresh(index="df_corpus_fullest")
     es.indices.refresh(index="df_summary_fullest")
 
