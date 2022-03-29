@@ -12,7 +12,7 @@ from elasticsearch.helpers import bulk
 
 tqdm.pandas()
 
-chunk_size = 5
+chunk_size = 1
 
 common_settings = {
     'analysis':{
@@ -121,15 +121,15 @@ if __name__ == "__main__":
 
     mappings_current_act = {'properties': {}}
     for field in current_act_keys:
-        if field in ['link']:
+        if field in ['link', 'index', 'no']:
             df_current_act[field] = df_current_act[field].progress_apply(safe_value)
             mappings_current_act['properties'].update({field: {
                                             'type': 'text',
-                                            'fields': {
-                                                'keyword': {
-                                                    'type': 'keyword',
-                                                }
-                                            }
+                                            # 'fields': {
+                                            #     'keyword': {
+                                            #         'type': 'keyword',
+                                            #     }
+                                            # }
                                         }})    
             
         # elif field in [
@@ -146,13 +146,13 @@ if __name__ == "__main__":
         #                                     'type': 'keyword',
         #                                 }})
             
-        elif field in ['index', 'no']:
-            df_current_act[field] = df_current_act[field].progress_apply(safe_int)
-            mappings_current_act['properties'].update({field:{
-                                        'type': 'short'
-                                    }})
+        # elif field in ['index', 'no']:
+        #     df_current_act[field] = df_current_act[field].progress_apply(safe_value)
+        #     mappings_current_act['properties'].update({field:{
+        #                                 'type': 'text'
+        #                             }})
         
-        # elif field in ['decision_date']:
+        # # elif field in ['decision_date']:
         #     df_summary_fullest[field] = df_summary_fullest[field].progress_apply(safe_date)
         #     mappings_summary['properties'].update({field: {
         #                                     'type': 'date',
