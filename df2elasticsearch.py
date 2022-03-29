@@ -199,6 +199,7 @@ if __name__ == "__main__":
     print()
     res = es.indices.get(index="df_current_act", pretty=True)
     pprint(res)
+    print(es.cat.indices())
     print("Current Act Done...")
     print()
 
@@ -341,6 +342,7 @@ if __name__ == "__main__":
     print()
     res = es.indices.get(index="df_summary_fullest", pretty=True)
     pprint(res)
+    print(es.cat.indices())
     print("Summary Done...")
     print()
 
@@ -517,6 +519,7 @@ if __name__ == "__main__":
     res = es.indices.get(index="df_corpus_fullest", pretty=True)
     print()
     pprint(res)
+    print(es.cat.indices())
     print("Corpus Done...")
     
     es.indices.refresh(index="df_current_act")
