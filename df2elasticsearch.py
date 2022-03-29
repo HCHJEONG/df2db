@@ -85,32 +85,21 @@ if __name__ == "__main__":
     print(es.info())
     print(es.cat.indices()) # index names: 1. "df_corpus_fullest" 2. "df_summary_fullest" 3. "df_current_act"
 
+    print("Common Settings for Indices...")
+    pprint(common_settings)    
+    print()
+    
     # removing duplicate indicies...
-    input("Press Enter for Removing CurrentAct/Summary/Corpus Indices in ELK DB...")
+    input("Press Enter for Removing CurrentAct Indices in ELK DB...")
     print()
 
     try:
         es.indices.delete(index = "df_current_act")
     except:
         print("no df_current_act index...")
- 
-    try:
-        es.indices.delete(index = "df_summary_fullest")
-    except:
-        print("no df_summary_fullest index...")
- 
-    try:
-        es.indices.delete(index = "df_corpus_fullest")
-    except:
-        print("no df_corpus_fullest index...")
-               
     print(es.cat.indices())
     print()
-
-    print("Common Settings for Indices...")
-    pprint(common_settings)    
-    print()
-    
+ 
     input('Press Enter for current act loading...')
     df_current_act = pd.read_pickle('../web2df/saved/current_act.pickle').reset_index()
     print()
@@ -221,6 +210,17 @@ if __name__ == "__main__":
     print("Current Act Done...")
     print()
 
+    # removing duplicate indicies...
+    input("Press Enter for Removing Summary Indices in ELK DB...")
+    print()
+
+    try:
+        es.indices.delete(index = "df_summary_fullest")
+    except:
+        print("no df_summary_fullest index...")
+    print(es.cat.indices())
+    print()
+ 
     input('Press Enter for df summary fullest loading...')
     df_summary_fullest = pd.read_pickle('../web2df/saved/df_summary_fullest.pickle').reset_index()
     print()
@@ -351,7 +351,18 @@ if __name__ == "__main__":
     pprint(res)
     print("Summary Done...")
     print()
-    
+
+    # removing duplicate indicies...
+    input("Press Enter for Removing Corpus Indices in ELK DB...")
+    print()
+
+    try:
+        es.indices.delete(index = "df_corpus_fullest")
+    except:
+        print("no df_corpus_fullest index...")
+    print(es.cat.indices())
+    print()
+ 
     input('Press Enter for df corpus fullest loading...')
     df_corpus_fullest = pd.read_pickle('../web2df/saved/df_corpus_fullest.pickle').reset_index()
     print()
