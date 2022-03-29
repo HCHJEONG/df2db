@@ -12,7 +12,7 @@ from elasticsearch.helpers import bulk
 
 tqdm.pandas()
 
-chunk_size = 100
+chunk_size = 5
 
 common_settings = {
     'analysis':{
@@ -52,7 +52,7 @@ def safe_dict(field_val):
 def filterKeys(document, use_these_keys):
     return {key: document[key] for key in use_these_keys} # dictionary comprehension
 
-def doc_generator(df, your_index, keys):
+def doc_generator(df, your_index, use_these_keys):
     df_iter = df.iterrows()
     for i, document in tqdm(df_iter, total = len(df)):
         # if i%30000 == 0:
@@ -66,17 +66,9 @@ def doc_generator(df, your_index, keys):
         yield {
             "_index": your_index,
             "_id": f"{i}",
-            "_source": filterKeys(document, keys),
+            "_source": filterKeys(document, use_these_keys),
         }
-    # raise StopIteration
 
-# def doc_list_factory(df, your_index, column_list):
-#     doc_list = []
-#     for item in tqdm(df):
-#         doc_list.append({"_index": your_index,
-#                          "_source": filterKeys(item, column_list)}
-#                         )
-#     return doc_list
 
 if __name__ == "__main__":
     
@@ -129,7 +121,7 @@ if __name__ == "__main__":
 
     mappings_current_act = {'properties': {}}
     for field in current_act_keys:
-        if field in ['name', 'link']:
+        if field in ['link']:
             df_current_act[field] = df_current_act[field].progress_apply(safe_value)
             mappings_current_act['properties'].update({field: {
                                             'type': 'text',
@@ -157,7 +149,7 @@ if __name__ == "__main__":
         elif field in ['index', 'no']:
             df_current_act[field] = df_current_act[field].progress_apply(safe_int)
             mappings_current_act['properties'].update({field:{
-                                        'type': 'byte'
+                                        'type': 'short'
                                     }})
         
         # elif field in ['decision_date']:
@@ -166,7 +158,7 @@ if __name__ == "__main__":
         #                                     'type': 'date',
         #                                 }})   
             
-        elif field in ['body']:
+        elif field in ['name', 'body']:
             df_current_act[field] = df_current_act[field].progress_apply(safe_value)
             mappings_current_act['properties'].update({field: {
                                             'type': 'text',
@@ -192,8 +184,8 @@ if __name__ == "__main__":
                       )
     
     doc_gen = doc_generator(df_current_act,   
-                                "df_current_act",
-                                current_act_keys)  
+                            "df_current_act",
+                            current_act_keys)  
     # doc_list = doc_list_factory(df_summary_full,   
     #                             "df_summary_full",
     #                             summary_full_keys)  
@@ -201,7 +193,7 @@ if __name__ == "__main__":
         doc_gen,
         chunk_size = chunk_size,
         request_timeout = 60*5,
-        raise_on_error = False
+        # raise_on_error = False
         )
     
     print()
