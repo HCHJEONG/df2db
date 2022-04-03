@@ -80,7 +80,137 @@ if __name__ == "__main__":
     print("Common Settings for Indices...")
     pprint(common_settings)    
     print()
+
+ # removing duplicate indicies...
+    input("Press Enter for Removing Constitutional Indices in ELK DB...")
+    print()
+
+    try:
+        es.indices.delete(index = "df_constitutional")
+    except:
+        print("no df_constitutional index...")
+    print(es.cat.indices())
+    print()
+ 
+    input('Press Enter for current act loading...')
+    df_constitutional = pd.read_pickle('../web2df/saved/openapi_detc.pickle').reset_index()
+    print()
+    print(df_constitutional.info())
+    pprint(df_constitutional.head(2).to_dict(orient = 'records'))
+    print()
+    constitutional_keys = [*df_constitutional] 
+    print(f"There are {len(constitutional_keys)} fields in df constitutional as follows: \n")
+    print(constitutional_keys)
+    print()
+    # input('...')
+
+    constitutional_keys = [
+
+        "date",
+        "caseno",
+        "name",
+        "sort",
+        "item",
+        "gist",
+        "body",
+        "act",
+        "prec",
+        "targetact"
+
+        ]  
+       
+    print(f"After selection, there are now {len(constitutional_keys)} fields in df constitutional as follows: \n")
+    print(constitutional_keys)
+    print()
+
+    input("Press Enter for Indexing of df_constitutional...\n")
+    print()
+
+    mappings_constitutional = {'properties': {}}
+    for field in constitutional_keys:
+        if field in ['caseno', 'act', 'targetact', 'prec']:
+            df_constitutional[field] = df_constitutional[field].progress_apply(safe_value)
+            mappings_constitutional['properties'].update({field: {
+                                            'type': 'text',
+                                            # 'fields': {
+                                            #     'keyword': {
+                                            #         'type': 'keyword',
+                                            #     }
+                                            # }
+                                        }})    
+            
+        # elif field in [
+        #             'case_no',
+        #             'court_name',
+        #             'important', 
+        #             'supreme', 
+        #             'jeonhap', 
+        #             'case_sort', 
+        #             'for_lawschool'
+        #             ]:
+        #     df_summary_fullest[field] = df_summary_fullest[field].progress_apply(safe_keyword)
+        #     mappings_summary['properties'].update({field: {
+        #                                     'type': 'keyword',
+        #                                 }})
+            
+        # elif field in ['index', 'no']:
+        #     df_current_act[field] = df_current_act[field].progress_apply(safe_value)
+        #     mappings_current_act['properties'].update({field:{
+        #                                 'type': 'text'
+        #                             }})
+        
+        elif field in ['date']:
+            df_constitutional[field] = df_constitutional[field].progress_apply(safe_date)
+            mappings_constitutional['properties'].update({field: {
+                                            'type': 'date',
+                                        }})   
+            
+        elif field in ['name', 'item', 'gist', 'body']:
+            df_constitutional[field] = df_constitutional[field].progress_apply(safe_value)
+            mappings_constitutional['properties'].update({field: {
+                                            'type': 'text',
+                                            'analyzer' : 'korean',
+                                            'fields': {
+                                                'simple_analysis': {
+                                                    'type': 'text',
+                                                    'analyzer': 'simple'
+                                                }
+                                            }
+                                        }})
     
+    print()
+    print("Constitutional Mappings:")
+    pprint(mappings_constitutional)
+    print("len: ", len(df_constitutional))
+    print()
+    input('enter for index creating and data inserting...')
+    print()
+    
+    es.indices.create(index = "df_constitutional",
+                      settings = common_settings,
+                      mappings = mappings_constitutional,
+                      )
+    
+    doc_gen = doc_generator(df_constitutional,   
+                            "df_constitutional",
+                            constitutional_keys)  
+    # doc_list = doc_list_factory(df_summary_full,   
+    #                             "df_summary_full",
+    #                             summary_full_keys)  
+    bulk(es, 
+        doc_gen,
+        chunk_size = chunk_size,
+        request_timeout = 60*5,
+        # raise_on_error = False
+        )
+    
+    print()
+    res = es.indices.get(index="df_constitutional", pretty=True)
+    pprint(res)
+    print(es.cat.indices())
+    print("Constitutional Done...")
+    print()
+
     # removing duplicate indicies...
     input("Press Enter for Removing CurrentAct Indices in ELK DB...")
     print()
