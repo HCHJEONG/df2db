@@ -92,7 +92,7 @@ if __name__ == "__main__":
     print(es.cat.indices())
     print()
  
-    input('Press Enter for current act loading...')
+    input('Press Enter for constitutional loading...')
     df_constitutional = pd.read_pickle('../web2df/saved/openapi_detc.pickle').reset_index()
     print()
     print(df_constitutional.info())
