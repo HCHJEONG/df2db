@@ -139,19 +139,13 @@ if __name__ == "__main__":
                                             # }
                                         }})    
             
-        # elif field in [
-        #             'case_no',
-        #             'court_name',
-        #             'important', 
-        #             'supreme', 
-        #             'jeonhap', 
-        #             'case_sort', 
-        #             'for_lawschool'
-        #             ]:
-        #     df_summary_fullest[field] = df_summary_fullest[field].progress_apply(safe_keyword)
-        #     mappings_summary['properties'].update({field: {
-        #                                     'type': 'keyword',
-        #                                 }})
+        elif field in [
+                    'sort',
+                    ]:
+            df_constitutional[field] = df_constitutional[field].progress_apply(safe_keyword)
+            mappings_constitutional['properties'].update({field: {
+                                            'type': 'keyword',
+                                        }})
             
         # elif field in ['index', 'no']:
         #     df_current_act[field] = df_current_act[field].progress_apply(safe_value)
